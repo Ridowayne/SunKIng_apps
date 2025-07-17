@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Call Audit Detail</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="bg-yellow-400 text-gray-900 min-h-screen p-8">
+    <div class="max-w-3xl mx-auto bg-white rounded-lg shadow p-6">
+      <h1 class="text-3xl font-bold mb-4 text-center">Call Audit Details</h1>
+
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+          <p><strong>Agent Name:</strong> {{ audit.name }}</p>
+          <p><strong>Audited By:</strong> {{ audit.auidited_by }}</p>
+          <p><strong>Disposition:</strong> {{ audit.agent_disposition }}</p>
+          <p><strong>Call Language:</strong> {{ audit.call_language }}</p>
+          <p><strong>Call Date:</strong> {{ audit.call_date }}</p>
+          <p><strong>Total Score:</strong> {{ audit.total_score }}%</p>
+        </div>
+
+        <div class="mt-6">
+          <h2 class="text-xl font-semibold mb-2">Score Breakdown</h2>
+          <ul class="list-disc list-inside space-y-1">
+            <li>
+              <strong>Foundation Skill:</strong>
+              {{audit.foundation_Skill_score}}%
+            </li>
+            <li>
+              <strong>Communication Skill:</strong>
+              {{audit.commuication_skill_score}}%
+            </li>
+            <li>
+              <strong>Probing Skill:</strong> {{audit.probing_skill_score}}%
+            </li>
+            <li>
+              <strong>Negotiation Skill:</strong>
+              {{audit.negotiation_skill_score}}%
+            </li>
+            <li>
+              <strong>Closing Skill:</strong> {{ audit.closing_skill_score }}%
+            </li>
+          </ul>
+        </div>
+
+        <div class="mt-6 text-center">
+          <a
+            href="{% url 'call-audit-records' %}"
+            class="text-blue-600 hover:underline"
+            >← Back to Audit List</a
+          >
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,498 @@
+<div class="alert alert-info" id="errorAlert" style="display: none;">
+          <strong>Error:</strong> <span id="errorMessage"></span>
+        </div><!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Call Overdue Customers</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
+        min-height: 100vh;
+        padding: 20px;
+      }
+      
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        overflow: hidden;
+      }
+      
+      .header {
+        background: linear-gradient(45deg, #000000, #333333);
+        color: #ffd700;
+        padding: 30px;
+        text-align: center;
+      }
+      
+      .header h1 {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+        font-weight: 300;
+      }
+      
+      .header p {
+        opacity: 0.9;
+        font-size: 1.1rem;
+      }
+      
+      .form-section {
+        padding: 40px;
+      }
+      
+      .upload-form {
+        background: #f8f9fa;
+        border: 2px dashed #dee2e6;
+        border-radius: 10px;
+        padding: 40px;
+        text-align: center;
+        transition: all 0.3s ease;
+      }
+      
+      .upload-form:hover {
+        border-color: #ffd700;
+        background: #fffbf0;
+      }
+      
+      .file-input-wrapper {
+        position: relative;
+        display: inline-block;
+        margin: 20px 0;
+      }
+      
+      .file-input {
+        position: absolute;
+        left: -9999px;
+      }
+      
+      .file-input-label {
+        display: inline-block;
+        background: #000000;
+        color: #ffd700;
+        padding: 15px 30px;
+        border-radius: 50px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: 500;
+        font-size: 1.1rem;
+        border: 2px solid #ffd700;
+      }
+      
+      .file-input-label:hover {
+        background: #ffd700;
+        color: #000000;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(255, 215, 0, 0.4);
+      }
+      
+      .file-selected {
+        margin-top: 15px;
+        color: #000000;
+        font-weight: 500;
+      }
+      
+      .submit-btn {
+        background: linear-gradient(45deg, #ffd700, #ffed4e);
+        color: #000000;
+        border: 2px solid #000000;
+        padding: 15px 40px;
+        border-radius: 50px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-top: 20px;
+      }
+      
+      .submit-btn:hover {
+        background: #000000;
+        color: #ffd700;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(255, 215, 0, 0.4);
+      }
+      
+      .submit-btn:disabled {
+        background: #6c757d;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+      
+      .results-section {
+        padding: 0 40px 40px;
+      }
+      
+      .results-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e9ecef;
+      }
+      
+      .results-title {
+        font-size: 1.8rem;
+        color: #000000;
+        font-weight: 600;
+      }
+      
+      .results-stats {
+        display: flex;
+        gap: 20px;
+      }
+      
+      .stat {
+        text-align: center;
+        padding: 10px 15px;
+        background: #f8f9fa;
+        border-radius: 8px;
+      }
+      
+      .stat-number {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #000000;
+      }
+      
+      .stat-label {
+        font-size: 0.9rem;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      
+      .results-list {
+        list-style: none;
+      }
+      
+      .result-item {
+        background: white;
+        border: 1px solid #e9ecef;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 15px;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      }
+      
+      .result-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      }
+      
+      .customer-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+      }
+      
+      .customer-details {
+        flex: 1;
+      }
+      
+      .customer-name {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #000000;
+        margin-bottom: 5px;
+      }
+      
+      .customer-phone {
+        color: #6c757d;
+        font-family: 'Courier New', monospace;
+      }
+      
+      .call-status {
+        padding: 8px 16px;
+        border-radius: 25px;
+        font-weight: 500;
+        font-size: 0.9rem;
+        text-align: center;
+        min-width: 120px;
+      }
+      
+      .status-success {
+        background: #fff3cd;
+        color: #000000;
+        border: 2px solid #ffd700;
+      }
+      
+      .status-error {
+        background: #000000;
+        color: #ffd700;
+        border: 2px solid #ffd700;
+      }
+      
+      .call-details {
+        margin-top: 10px;
+        font-size: 0.9rem;
+        color: #6c757d;
+      }
+      
+      .loading {
+        display: none;
+        text-align: center;
+        padding: 20px;
+      }
+      
+      .spinner {
+        border: 3px solid #f3f3f4;
+        border-top: 3px solid #ffd700;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 15px;
+      }
+      
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      
+      .alert {
+        padding: 15px;
+        margin-bottom: 20px;
+        border: 1px solid transparent;
+        border-radius: 8px;
+      }
+      
+      .alert-info {
+        color: #000000;
+        background-color: #fff3cd;
+        border-color: #ffd700;
+      }
+      
+      .instructions {
+        background: #fff3cd;
+        border-left: 4px solid #000000;
+        padding: 20px;
+        margin-bottom: 30px;
+        border-radius: 0 8px 8px 0;
+      }
+      
+      .instructions h3 {
+        color: #000000;
+        margin-bottom: 10px;
+      }
+      
+      .instructions ul {
+        margin-left: 20px;
+        color: #6c757d;
+      }
+      
+      .instructions li {
+        margin-bottom: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>📞 Call Overdue Customers</h1>
+        <p>Automated customer outreach system</p>
+      </div>
+      
+      <div class="form-section">
+        <div class="instructions">
+          <h3>📋 Instructions</h3>
+          <ul>
+            <li>Upload an Excel file (.xlsx or .xls) containing customer data</li>
+            <li>Required columns: <strong>Name</strong>, <strong>Amount Due</strong>, <strong>Phone Number</strong> (in that order)</li>
+            <li>Phone numbers will be automatically formatted for Nigerian numbers</li>
+            <li>The system will automatically call each customer with their debt information</li>
+            <li>Review call results below after processing</li>
+          </ul>
+        </div>
+        
+        <form method="post" enctype="multipart/form-data" id="uploadForm">
+          {% csrf_token %}
+          <div class="upload-form">
+            <div style="font-size: 3rem; margin-bottom: 15px;">📊</div>
+            <h3 style="margin-bottom: 10px;">Upload Customer Data</h3>
+            <p style="color: #6c757d; margin-bottom: 20px;">Select your Excel file to begin calling customers</p>
+            
+            <div class="file-input-wrapper">
+              <input type="file" name="file" id="file" class="file-input" accept=".xlsx,.xls" required />
+              <label for="file" class="file-input-label">Choose Excel File</label>
+            </div>
+            
+            <div id="fileSelected" class="file-selected" style="display: none;"></div>
+            
+            <button type="submit" class="submit-btn" id="submitBtn" disabled>
+              🚀 Start Calling Customers
+            </button>
+          </div>
+        </form>
+        
+        <div class="loading" id="loading">
+          <div class="spinner"></div>
+          <p>Processing calls... This may take a few minutes.</p>
+        </div>
+      </div>
+
+      <div class="results-section" id="resultsSection" style="display: none;">
+      <div class="results-section">
+        <div class="results-header">
+          <h2 class="results-title">📊 Call Results</h2>
+          <div class="results-stats">
+            <div class="stat">
+              <div class="stat-number" id="totalCalls">0</div>
+              <div class="stat-label">Total</div>
+            </div>
+            <div class="stat">
+              <div class="stat-number" style="color: #ffd700;" id="successfulCalls">0</div>
+              <div class="stat-label">Success</div>
+            </div>
+            <div class="stat">
+              <div class="stat-number" style="color: #ff6b35;" id="failedCalls">0</div>
+              <div class="stat-label">Failed</div>
+            </div>
+          </div>
+        </div>
+        
+        <ul class="results-list" id="resultsList">
+        </ul>
+      </div>
+      
+    </div>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const fileInput = document.getElementById('file');
+        const fileSelected = document.getElementById('fileSelected');
+        const submitBtn = document.getElementById('submitBtn');
+        const uploadForm = document.getElementById('uploadForm');
+        const loading = document.getElementById('loading');
+        const errorAlert = document.getElementById('errorAlert');
+        const errorMessage = document.getElementById('errorMessage');
+        const resultsSection = document.getElementById('resultsSection');
+        
+        fileInput.addEventListener('change', function() {
+          if (this.files && this.files[0]) {
+            fileSelected.textContent = `Selected: ${this.files[0].name}`;
+            fileSelected.style.display = 'block';
+            submitBtn.disabled = false;
+            errorAlert.style.display = 'none';
+          } else {
+            fileSelected.style.display = 'none';
+            submitBtn.disabled = true;
+          }
+        });
+        
+        uploadForm.addEventListener('submit', function(e) {
+          e.preventDefault();
+          
+          const formData = new FormData(this);
+          
+          // Show loading state
+          loading.style.display = 'block';
+          submitBtn.disabled = true;
+          submitBtn.textContent = 'Processing Calls...';
+          errorAlert.style.display = 'none';
+          resultsSection.style.display = 'none';
+          
+          // Get CSRF token
+          const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+          
+          fetch(window.location.href, {
+            method: 'POST',
+            body: formData,
+            headers: {
+              'X-CSRFToken': csrfToken,
+            }
+          })
+          .then(response => {
+            if (!response.ok) {
+              return response.json().then(err => Promise.reject(err));
+            }
+            return response.json();
+          })
+          .then(data => {
+            if (data.error) {
+              throw new Error(data.error);
+            }
+            
+            displayResults(data.calls);
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            errorMessage.textContent = error.message || 'An error occurred while processing the file.';
+            errorAlert.style.display = 'block';
+          })
+          .finally(() => {
+            // Hide loading state
+            loading.style.display = 'none';
+            submitBtn.disabled = false;
+            submitBtn.textContent = '🚀 Start Calling Customers';
+          });
+        });
+        
+        function displayResults(calls) {
+          const totalCalls = calls.length;
+          const successfulCalls = calls.filter(call => call.sid).length;
+          const failedCalls = calls.filter(call => call.error).length;
+          
+          // Update statistics
+          document.getElementById('totalCalls').textContent = totalCalls;
+          document.getElementById('successfulCalls').textContent = successfulCalls;
+          document.getElementById('failedCalls').textContent = failedCalls;
+          
+          // Generate results list
+          const resultsList = document.getElementById('resultsList');
+          resultsList.innerHTML = '';
+          
+          calls.forEach(call => {
+            const listItem = document.createElement('li');
+            listItem.className = 'result-item';
+            
+            const statusClass = call.sid ? 'status-success' : 'status-error';
+            const statusText = call.sid ? '✅ Call Successful' : '❌ Call Failed';
+            const detailsText = call.sid ? 
+              `<strong>Call ID:</strong> ${call.sid}` : 
+              `<strong>Error:</strong> ${call.error}`;
+            
+            listItem.innerHTML = `
+              <div class="customer-info">
+                <div class="customer-details">
+                  <div class="customer-name">${call.name}</div>
+                  <div class="customer-phone">📱 ${call.phone}</div>
+                </div>
+                <div class="call-status ${statusClass}">
+                  ${statusText}
+                </div>
+              </div>
+              <div class="call-details">
+                ${detailsText}
+              </div>
+            `;
+            
+            resultsList.appendChild(listItem);
+          });
+          
+          // Show results section
+          resultsSection.style.display = 'block';
+          
+          // Scroll to results
+          resultsSection.scrollIntoView({ behavior: 'smooth' });
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Questions</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        padding: 0;
+        background-color: yellow;
+      }
+      nav {
+        margin-bottom: 20px;
+        padding: 10px;
+        background-color: #f0f0f0;
+        border-radius: 5px;
+        display: flex; /* Enable flexbox */
+        justify-content: flex-end; /* Align items to the right */
+        max-width: 800px; /* Set a maximum width */
+        margin-left: auto; /* Center the nav */
+      }
+      nav a {
+        margin-right: 15px;
+        text-decoration: none;
+        color: black;
+        font-weight: bold;
+      }
+      nav a:hover {
+        text-decoration: underline;
+      }
+      .question-list {
+        margin-bottom: 20px;
+      }
+      .question-item {
+        padding: 10px;
+        border: 1px solid #ccc;
+        margin-bottom: 5px;
+        border-color: black;
+      }
+      .add-question {
+        margin-top: 20px;
+      }
+      .archive-button {
+        background-color: #f44336;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        padding: 5px 10px;
+        margin-left: 10px;
+      }
+      .archive-button:hover {
+        background-color: #d32f2f;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Questions</h1>
+
+    <nav>
+      <a href="{% url 'questions' %}">All Questions</a>
+      <a href="{% url 'category' %}">All Categories</a>
+      <a href="{% url 'customer' %}">Customer Table</a>
+      <a href="{% url 'customer_questions' %}">Customer Questions</a>
+    </nav>
+
+    <div class="question-list">
+      <h2>Existing Questions</h2>
+      {% for question in questions %}
+      <div class="question-item">
+        <strong>{{ question.question }}?</strong>
+        <em>{{ question.category }}</em>
+        <button
+          class="archive-button"
+          onclick="archiveQuestion('{{ question.question_id }}')"
+        >
+          Archive
+        </button>
+      </div>
+      {% empty %}
+      <div class="question-item">No questions available.</div>
+      {% endfor %}
+    </div>
+
+    <div class="add-question">
+      <h2>Add New Question</h2>
+      <form method="POST" action="{% url 'questions' %}">
+        {% csrf_token %}
+        <select name="category" required>
+          <option value="" disabled selected>Select a category</option>
+          {% for cat in cats %}
+          <option value="{{ cat.category_id }}">{{ cat.name }}</option>
+          {% endfor %}
+        </select>
+        <input
+          type="text"
+          name="question"
+          placeholder="Enter your question"
+          required
+        />
+
+        <h3>Answers (4 required)</h3>
+        <div class="answer-section">
+          {% for i in "1234" %}
+          <input
+            type="text"
+            name="answers"
+            placeholder="Answer {{ i }}"
+            required
+          />
+          <input
+            type="number"
+            name="marks"
+            placeholder="Marks for Answer {{ i }}"
+            required
+          />
+          {% endfor %}
+        </div>
+
+        <button type="submit">Add Question</button>
+      </form>
+    </div>
+
+    <script>
+      function archiveQuestion(question_id) {
+        fetch("{% url 'questions' %}", {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token }}",
+          },
+          body: JSON.stringify({ question: question_id }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.status === "success") {
+              alert(data.message);
+              location.reload();
+            } else {
+              alert(data.message);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            alert("An error occurred while archiving the question.");
+          });
+      }
+    </script>
+  </body>
+</html>

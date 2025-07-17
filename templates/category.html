@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Categories</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        padding: 0;
+        background-color: yellow;
+      }
+      nav {
+        margin-bottom: 20px;
+        padding: 10px;
+        background-color: #f0f0f0;
+        border-radius: 5px;
+        display: flex; /* Enable flexbox */
+        justify-content: flex-end; /* Align items to the right */
+        max-width: 800px;
+        margin-left: auto;
+      }
+      nav a {
+        margin-right: 15px;
+        text-decoration: none;
+        color: black;
+        font-weight: bold;
+      }
+      nav a:hover {
+        text-decoration: underline;
+      }
+      .category-list {
+        margin-bottom: 20px;
+      }
+      .category-item {
+        padding: 10px;
+        border: 1px solid #ccc;
+        margin-bottom: 5px;
+        border-style: dotted;
+        border-color: black;
+      }
+      .add-category {
+        margin-top: 20px;
+      }
+      .archive-button {
+        background-color: #f44336;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        padding: 5px 10px;
+        margin-left: 10px;
+      }
+      .archive-button:hover {
+        background-color: #d32f2f;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Categories</h1>
+
+    <nav>
+      <a href="{% url 'questions' %}">All Questions</a>
+      <a href="{% url 'category' %}">All Categories</a>
+      <a href="{% url 'customer' %}">Customer Table</a>
+      <a href="{% url 'customer_questions' %}">Customer Questions</a>
+    </nav>
+
+    <div class="category-list">
+      <h2>Existing Categories</h2>
+      {% for category in categories %}
+      <div class="category-item">
+        <strong>{{ category.name }}</strong>
+        <button
+          class="archive-button"
+          onclick="archiveCategory('{{ category.category_id }}')"
+        >
+          Archive
+        </button>
+      </div>
+      {% empty %}
+      <div class="category-item">No categories available.</div>
+      {% endfor %}
+    </div>
+
+    <div class="add-category">
+      <h2>Add New Category</h2>
+      <form method="POST" action="{% url 'category' %}">
+        {% csrf_token %}
+        <input
+          type="text"
+          name="category_name"
+          placeholder="Enter category name"
+          required
+        />
+        <button type="submit">Add Category</button>
+      </form>
+    </div>
+
+    <script>
+      function archiveCategory(category_id) {
+        fetch("{% url 'category' %}", {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token }}",
+          },
+          body: JSON.stringify({ category: category_id }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.status === "success") {
+              alert(data.message);
+              location.reload();
+            } else {
+              alert(data.message);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            alert("An error occurred while archiving the category.");
+          });
+      }
+    </script>
+  </body>
+</html>

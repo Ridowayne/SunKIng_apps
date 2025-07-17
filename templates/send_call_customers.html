@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SendChamp Voice Calls - Overdue Customers</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+      }
+
+      .header {
+        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+        color: white;
+        padding: 30px;
+        text-align: center;
+      }
+
+      .header h1 {
+        font-size: 2.5em;
+        margin-bottom: 10px;
+        font-weight: 300;
+      }
+
+      .header p {
+        opacity: 0.8;
+        font-size: 1.1em;
+      }
+
+      .main-content {
+        padding: 40px;
+      }
+
+      .upload-section {
+        background: #f8f9fa;
+        border-radius: 15px;
+        padding: 30px;
+        margin-bottom: 30px;
+        border: 3px dashed #dee2e6;
+        transition: all 0.3s ease;
+      }
+
+      .upload-section:hover {
+        border-color: #667eea;
+        background: #f0f2ff;
+      }
+
+      .file-input-wrapper {
+        position: relative;
+        display: inline-block;
+        width: 100%;
+      }
+
+      .file-input {
+        position: absolute;
+        opacity: 0;
+        width: 100%;
+        height: 100%;
+        cursor: pointer;
+      }
+
+      .file-input-button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: transform 0.3s ease;
+        font-size: 1.1em;
+      }
+
+      .file-input-button:hover {
+        transform: translateY(-2px);
+      }
+
+      .controls {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+      }
+
+      .btn {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1em;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+      }
+
+      .btn-secondary {
+        background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+        color: white;
+      }
+
+      .btn-info {
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+        color: white;
+      }
+
+      .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+      }
+
+      .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .status-section {
+        background: #f8f9fa;
+        border-radius: 15px;
+        padding: 30px;
+        margin-bottom: 30px;
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 20px;
+      }
+
+      .stat-card {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        text-align: center;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .stat-number {
+        font-size: 2em;
+        font-weight: bold;
+        margin-bottom: 10px;
+      }
+
+      .stat-label {
+        color: #6c757d;
+        font-size: 0.9em;
+      }
+
+      .success {
+        color: #28a745;
+      }
+      .danger {
+        color: #dc3545;
+      }
+      .info {
+        color: #17a2b8;
+      }
+
+      .results-section {
+        margin-top: 30px;
+      }
+
+      .results-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .results-table th,
+      .results-table td {
+        padding: 15px;
+        text-align: left;
+        border-bottom: 1px solid #dee2e6;
+      }
+
+      .results-table th {
+        background: #f8f9fa;
+        font-weight: 600;
+      }
+
+      .status-badge {
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 0.8em;
+        font-weight: bold;
+      }
+
+      .status-success {
+        background: #d4edda;
+        color: #155724;
+      }
+
+      .status-error {
+        background: #f8d7da;
+        color: #721c24;
+      }
+
+      .loading {
+        display: none;
+        text-align: center;
+        padding: 20px;
+      }
+
+      .spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #667eea;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 20px;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .file-info {
+        margin-top: 15px;
+        padding: 15px;
+        background: #e9ecef;
+        border-radius: 8px;
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1><i class="fas fa-phone-alt"></i> SendChamp Voice Calls</h1>
+        <p>Automated voice calls for overdue customers</p>
+      </div>
+
+      <div class="main-content">
+        <div class="upload-section">
+          <h3 style="margin-bottom: 20px; text-align: center">
+            <i class="fas fa-upload"></i> Upload Customer Excel File
+          </h3>
+          <div class="file-input-wrapper">
+            <input
+              type="file"
+              id="excel-file"
+              class="file-input"
+              accept=".xlsx,.xls"
+            />
+            <div class="file-input-button">
+              <i class="fas fa-file-excel"></i>
+              <span>Choose Excel File</span>
+            </div>
+          </div>
+          <div id="file-info" class="file-info">
+            <strong>File Selected:</strong> <span id="file-name"></span><br />
+            <strong>Size:</strong> <span id="file-size"></span>
+          </div>
+          <p style="margin-top: 15px; text-align: center; color: #6c757d">
+            Excel file should contain columns: Name, Amount Due, Phone Number
+          </p>
+        </div>
+
+        <div class="controls">
+          <button id="make-calls-btn" class="btn btn-primary" disabled>
+            <i class="fas fa-phone"></i> Make Voice Calls
+          </button>
+          <button id="check-balance-btn" class="btn btn-info">
+            <i class="fas fa-wallet"></i> Check Balance
+          </button>
+          <button id="clear-results-btn" class="btn btn-secondary">
+            <i class="fas fa-trash"></i> Clear Results
+          </button>
+        </div>
+
+        <div id="loading" class="loading">
+          <div class="spinner"></div>
+          <p>Making voice calls... Please wait.</p>
+        </div>
+
+        <div id="status-section" class="status-section" style="display: none">
+          <h3 style="margin-bottom: 20px">
+            <i class="fas fa-chart-bar"></i> Call Summary
+          </h3>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div id="total-calls" class="stat-number info">0</div>
+              <div class="stat-label">Total Processed</div>
+            </div>
+            <div class="stat-card">
+              <div id="successful-calls" class="stat-number success">0</div>
+              <div class="stat-label">Successful</div>
+            </div>
+            <div class="stat-card">
+              <div id="failed-calls" class="stat-number danger">0</div>
+              <div class="stat-label">Failed</div>
+            </div>
+            <div class="stat-card">
+              <div id="balance-amount" class="stat-number info">-</div>
+              <div class="stat-label">Account Balance</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="results-section" class="results-section" style="display: none">
+          <h3 style="margin-bottom: 20px">
+            <i class="fas fa-list"></i> Call Results
+          </h3>
+          <div style="overflow-x: auto">
+            <table class="results-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Phone</th>
+                  <th>Amount Due</th>
+                  <th>Status</th>
+                  <th>Call ID</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="results-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Get CSRF token
+      function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== "") {
+          const cookies = document.cookie.split(";");
+          for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === name + "=") {
+              cookieValue = decodeURIComponent(
+                cookie.substring(name.length + 1)
+              );
+              break;
+            }
+          }
+        }
+        return cookieValue;
+      }
+
+      // File input handling
+      document
+        .getElementById("excel-file")
+        .addEventListener("change", function (e) {
+          const file = e.target.files[0];
+          const makeCallsBtn = document.getElementById("make-calls-btn");
+          const fileInfo = document.getElementById("file-info");
+
+          if (file) {
+            document.getElementById("file-name").textContent = file.name;
+            document.getElementById("file-size").textContent =
+              (file.size / 1024 / 1024).toFixed(2) + " MB";
+            fileInfo.style.display = "block";
+            makeCallsBtn.disabled = false;
+          } else {
+            fileInfo.style.display = "none";
+            makeCallsBtn.disabled = true;
+          }
+        });
+
+      // Make voice calls
+      document
+        .getElementById("make-calls-btn")
+        .addEventListener("click", function () {
+          const fileInput = document.getElementById("excel-file");
+          const file = fileInput.files[0];
+
+          if (!file) {
+            alert("Please select an Excel file first.");
+            return;
+          }
+
+          const formData = new FormData();
+          formData.append("file", file);
+
+          // Show loading
+          document.getElementById("loading").style.display = "block";
+          this.disabled = true;
+
+          fetch(window.location.pathname, {
+            method: "POST",
+            body: formData,
+            headers: {
+              "X-CSRFToken": getCookie("csrftoken"),
+            },
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              displayResults(data);
+            })
+            .catch((error) => {
+              console.error("Error:", error);
+              alert("An error occurred while making calls.");
+            })
+            .finally(() => {
+              document.getElementById("loading").style.display = "none";
+              this.disabled = false;
+            });
+        });
+
+      // Check balance
+      document
+        .getElementById("check-balance-btn")
+        .addEventListener("click", function () {
+          fetch("/sendchamp-balance/")
+            .then((response) => response.json())
+            .then((data) => {
+              if (data.status === "success") {
+                const balance = data.data.balance;
+                document.getElementById(
+                  "balance-amount"
+                ).textContent = `₦${balance}`;
+                alert(`Your SendChamp balance is: ₦${balance}`);
+              } else {
+                alert("Failed to fetch balance: " + data.message);
+              }
+            })
+            .catch((error) => {
+              console.error("Error:", error);
+              alert("Error fetching balance.");
+            });
+        });
+
+      // Clear results
+      document
+        .getElementById("clear-results-btn")
+        .addEventListener("click", function () {
+          document.getElementById("status-section").style.display = "none";
+          document.getElementById("results-section").style.display = "none";
+          document.getElementById("results-tbody").innerHTML = "";
+        });
+
+      // Display results
+      function displayResults(data) {
+        const statusSection = document.getElementById("status-section");
+        const resultsSection = document.getElementById("results-section");
+        const tbody = document.getElementById("results-tbody");
+
+        // Update summary stats
+        document.getElementById("total-calls").textContent =
+          data.summary.total_processed;
+        document.getElementById("successful-calls").textContent =
+          data.summary.successful;
+        document.getElementById("failed-calls").textContent =
+          data.summary.failed;
+
+        // Clear previous results
+        tbody.innerHTML = "";
+
+        // Add call results to table
+        data.calls.forEach((call) => {
+          const row = tbody.insertRow();
+          row.innerHTML = `
+                    <td>${call.name}</td>
+                    <td>${call.phone}</td>
+                    <td>${call.amount_due || "-"}</td>
+                    <td>
+                        <span class="status-badge ${
+                          call.error ? "status-error" : "status-success"
+                        }">
+                            ${call.error ? "Failed" : "Success"}
+                        </span>
+                    </td>
+                    <td>${call.call_id || call.error || "-"}</td>
+                    <td>
+                        ${
+                          call.call_id
+                            ? `<button onclick="checkCallStatus('${call.call_id}')" class="btn" style="padding: 5px 10px; font-size: 0.8em;">Check Status</button>`
+                            : "-"
+                        }
+                    </td>
+                `;
+        });
+
+        statusSection.style.display = "block";
+        resultsSection.style.display = "block";
+      }
+
+      // Check individual call status
+      function checkCallStatus(callId) {
+        fetch(`/call-status/${callId}/`)
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.status === "success") {
+              alert(
+                `Call Status: ${data.data.status}\nDuration: ${
+                  data.data.duration || "N/A"
+                } seconds`
+              );
+            } else {
+              alert("Failed to fetch call status: " + data.message);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            alert("Error fetching call status.");
+          });
+      }
+    </script>
+  </body>
+</html>

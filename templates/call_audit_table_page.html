@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Call Audit List</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="bg-yellow-350 text-gray-800 min-h-screen p-8">
+    <h1 class="text-3xl font-bold mb-6 text-center">Call Audit Records</h1>
+
+    <div class="overflow-x-auto">
+      <table class="min-w-full bg-white shadow-lg rounded-lg overflow-hidden">
+        <thead class="bg-yellow-300">
+          <tr>
+            <th class="px-6 py-3 text-left text-sm font-medium">Agent Name</th>
+            <th class="px-6 py-3 text-left text-sm font-medium">Agent ID</th>
+            <th class="px-6 py-3 text-left text-sm font-medium">Total Score</th>
+            <th class="px-6 py-3 text-left text-sm font-medium">Disposition</th>
+            <th class="px-6 py-3 text-left text-sm font-medium">Audit Date</th>
+            <th class="px-6 py-3 text-left text-sm font-medium">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for audit in audits %}
+          <tr class="border-b hover:bg-yellow-100">
+            <td class="px-6 py-4 text-sm">{{ audit.name }}</td>
+            <td class="px-6 py-4 text-sm">{{ audit.agent_id }}</td>
+            <td class="px-6 py-4 text-sm">{{ audit.total_score }}</td>
+            <td class="px-6 py-4 text-sm">{{ audit.agent_disposition }}</td>
+            <td class="px-6 py-4 text-sm">
+              {{ audit.call_date|date:"Y-m-d" }}
+            </td>
+            <td class="px-6 py-4 text-sm">
+              <a
+                href="{% url 'call_audit_detail_page' audit.uid %}"
+                class="text-blue-600 hover:underline"
+                >View</a
+              >
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="5" class="px-6 py-4 text-center text-gray-500">
+              No audit records found.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>

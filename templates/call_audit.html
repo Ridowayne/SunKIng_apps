@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Call Audit</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-yellow-400 py-8 px-4">
+    <div class="max-w-3xl mx-auto bg-white p-6 rounded shadow">
+      <h1 class="text-2xl font-bold mb-4">Upload Call for Audit</h1>
+
+      <form
+        id="auditForm"
+        method="POST"
+        enctype="multipart/form-data"
+        class="space-y-4"
+      >
+        {% csrf_token %}
+
+        <div>
+          <label class="block font-medium mb-1">Agent Name:</label>
+          <input
+            type="text"
+            name="agent_name"
+            required
+            class="w-full border border-gray-300 px-3 py-2 rounded"
+            placeholder="e.g. Rilwan Hassan"
+          />
+        </div>
+
+        <div>
+          <label class="block font-medium mb-1">Agent ID:</label>
+          <input
+            type="text"
+            name="agent_id"
+            required
+            class="w-full border border-gray-300 px-3 py-2 rounded"
+            placeholder="e.g. 2909xx"
+          />
+        </div>
+
+        <div>
+          <label class="block font-medium mb-1">Disposition:</label>
+          <select
+            name="disposition"
+            required
+            class="w-full border border-gray-300 px-3 py-2 rounded"
+          >
+            <option value="">-- Select Disposition --</option>
+            <option value="Promise to Pay">Promise to Pay</option>
+            <option value="No Disposition Selected">
+              No Disposition Selected
+            </option>
+            <option value="Customer Reached Successfully">
+              Customer Reached Successfully
+            </option>
+            <option value="Faulty Product">Faulty Product</option>
+            <option value="Busy/Request for call back">
+              Busy/Request for call back
+            </option>
+            <option value="Wrong Number">Wrong Number</option>
+            <option value="Already Enabled/Unlocked">
+              Already Enabled/Unlocked
+            </option>
+            <option value="Ringing but not picking">
+              Ringing but not picking
+            </option>
+            <option value="Stolen">Stolen</option>
+            <option value="Client is dead">Client is dead</option>
+            <option value="Client is sick">Client is sick</option>
+            <option value="Client is bereaved">Client is bereaved</option>
+            <option value="Third Party">Third Party</option>
+            <option value="Answered by somebody else">
+              Answered by somebody else
+            </option>
+            <option value="Wrong Payment">Wrong Payment</option>
+            <option value="Not Reachable/Number out of service">
+              Not Reachable/Number out of service
+            </option>
+            <option value="Language Barrier">Language Barrier</option>
+            <option value="Done">Done</option>
+            <option value="Traveled">Traveled</option>
+            <option value="Repossessed">Repossessed</option>
+            <option value="Fraud Issue">Fraud Issue</option>
+            <option value="Burnt Product">Burnt Product</option>
+            <option value="Switched off">Switched off</option>
+            <option value="Others">Others</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-medium mb-1">Audio File:</label>
+          <input
+            type="file"
+            name="audio_file"
+            accept="audio/*"
+            required
+            class="w-full"
+          />
+        </div>
+
+        <button
+          type="submit"
+          class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          id="submitButton"
+        >
+          Submit for Audit
+        </button>
+
+        <!-- Spinner with text -->
+        <div
+          id="loadingMessage"
+          class="hidden flex items-center space-x-2 text-blue-600 mt-2"
+        >
+          <svg
+            class="animate-spin h-5 w-5 text-blue-600"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              class="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="4"
+            ></circle>
+            <path
+              class="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+            ></path>
+          </svg>
+          <span>Auditing the call... please wait.</span>
+        </div>
+      </form>
+
+      <div id="results" class="mt-8 hidden">
+        <h2 class="text-xl font-semibold mb-2">Audit Results</h2>
+
+        <div class="bg-gray-50 p-4 rounded border mb-4">
+          <h3 class="font-semibold mb-2">Transcription:</h3>
+          <pre
+            id="transcriptionText"
+            class="whitespace-pre-wrap text-sm bg-white p-2 rounded border"
+          ></pre>
+        </div>
+
+        <div class="bg-gray-50 p-4 rounded border">
+          <h3 class="font-semibold mb-2">Audit Table:</h3>
+          <div id="auditText" class="text-sm"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const form = document.getElementById("auditForm");
+      const resultsDiv = document.getElementById("results");
+      const transcriptionText = document.getElementById("transcriptionText");
+      const auditText = document.getElementById("auditText");
+      const loadingMessage = document.getElementById("loadingMessage");
+      const submitButton = document.getElementById("submitButton");
+
+      form.addEventListener("submit", async function (event) {
+        event.preventDefault();
+
+        loadingMessage.classList.remove("hidden");
+        submitButton.disabled = true;
+        submitButton.classList.add("opacity-50", "cursor-not-allowed");
+
+        const formData = new FormData(form);
+        try {
+          const response = await fetch("", {
+            method: "POST",
+            body: formData,
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+            transcriptionText.textContent = data.transcription;
+
+            const audit = data.audit;
+            const auditResults = audit.audit_results;
+            const language = audit.language;
+            const totalScore = audit.total_score;
+
+            let tableHtml = `
+              <table class="w-full text-sm border border-gray-300">
+                <thead class="bg-gray-100">
+                  <tr>
+                    <th class="border px-2 py-1 text-left">Skill</th>
+                    <th class="border px-2 py-1 text-left">Score</th>
+                    <th class="border px-2 py-1 text-left">Justification</th>
+                  </tr>
+                </thead>
+                <tbody>
+            `;
+
+            for (const [skill, { score, justification }] of Object.entries(
+              auditResults
+            )) {
+              tableHtml += `
+                <tr>
+                  <td class="border px-2 py-1">${skill}</td>
+                  <td class="border px-2 py-1">${score}</td>
+                  <td class="border px-2 py-1">${justification}</td>
+                </tr>
+              `;
+            }
+
+            tableHtml += `
+                <tr class="font-semibold bg-gray-50">
+                  <td class="border px-2 py-1">Total Score</td>
+                  <td class="border px-2 py-1">${totalScore}</td>
+                  <td class="border px-2 py-1">Language: ${language}</td>
+                </tr>
+              </tbody>
+              </table>
+            `;
+
+            auditText.innerHTML = tableHtml;
+            resultsDiv.classList.remove("hidden");
+          } else {
+            alert("Error: " + (data.error || "Something went wrong."));
+          }
+        } catch (error) {
+          alert("Error: " + error.message);
+        } finally {
+          loadingMessage.classList.add("hidden");
+          submitButton.disabled = false;
+          submitButton.classList.remove("opacity-50", "cursor-not-allowed");
+        }
+      });
+    </script>
+  </body>
+</html>

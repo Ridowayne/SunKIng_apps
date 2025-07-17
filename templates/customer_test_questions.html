@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Financial Questions</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        padding: 0;
+        background-color: yellow;
+      }
+      nav {
+        margin-bottom: 20px;
+        padding: 10px;
+        background-color: #f0f0f0;
+        border-radius: 5px;
+        display: flex; /* Enable flexbox */
+        justify-content: flex-end; /* Align items to the right */
+        max-width: 800px; /* Set a maximum width */
+        margin-left: auto; /* Center the nav */
+      }
+      nav a {
+        margin-right: 15px;
+        text-decoration: none;
+        color: black;
+        font-weight: bold;
+      }
+      nav a:hover {
+        text-decoration: underline;
+      }
+      .category {
+        margin-bottom: 40px;
+      }
+      .question {
+        margin-bottom: 20px;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+      }
+      .question h3 {
+        margin: 0;
+      }
+      .answers {
+        margin-left: 20px;
+      }
+      .submit-button {
+        margin-top: 20px;
+        color: black;
+        padding: 10px 15px;
+        background-color: #4caf50;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      .submit-button:hover {
+        background-color: #45a049;
+      }
+      .form-group {
+        margin-bottom: 15px;
+      }
+      label {
+        display: block;
+        margin-bottom: 5px;
+      }
+      input[type="text"] {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Customer Prospect Questions</h1>
+    <nav>
+      <a href="{% url 'questions' %}">All Questions</a>
+      <a href="{% url 'category' %}">All Categories</a>
+      <a href="{% url 'customer' %}">Customer Table</a>
+      <a href="{% url 'customer_questions' %}">Customer Questions</a>
+    </nav>
+    <form method="POST" action="{% url 'customer_questions' %}">
+      {% csrf_token %}
+
+      <div class="form-group">
+        <label for="customer_name">Customer Name:</label>
+        <input
+          type="text"
+          id="customer_name"
+          name="customer_name"
+          placeholder="Enter customer name"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="country">Country:</label>
+        <input
+          type="text"
+          id="country"
+          name="country"
+          placeholder="Enter country"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="product">Product:</label>
+        <input
+          type="text"
+          id="product"
+          name="product_category"
+          placeholder="Enter product category"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="area">Area:</label>
+        <input
+          type="text"
+          id="area"
+          name="area"
+          placeholder="Enter area"
+          required
+        />
+      </div>
+
+      {% for category in category_data %}
+      <div class="category">
+        <h2>Category Number: {{ category.category_number }}</h2>
+        <h3>{{ category.category }}</h3>
+        {% for question in category.questions %}
+        <div class="question">
+          <h4>{{ question.question }}</h4>
+          <div class="answers">
+            {% for answer in question.answers %}
+            <label>
+              <input
+                type="radio"
+                name="question_{{ question.id }}"
+                value="{{ answer.id }}"
+                required
+              />
+              {{ answer.answer }} </label
+            ><br />
+            {% endfor %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endfor %}
+
+      <button type="submit" class="submit-button">Submit Answers</button>
+    </form>
+  </body>
+</html>

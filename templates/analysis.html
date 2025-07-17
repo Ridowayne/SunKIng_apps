@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PDF Upload and Response</title>
+    <style>
+      body {
+        background-color: yellow;
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        flex-direction: column;
+      }
+
+      .container {
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        text-align: center;
+        max-width: 500px;
+        width: 100%;
+      }
+
+      h1 {
+        color: #333;
+        margin-bottom: 20px;
+      }
+
+      input[type="file"] {
+        margin-bottom: 20px;
+      }
+
+      button {
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+      }
+
+      button:hover {
+        background-color: #45a049;
+      }
+
+      .response {
+        margin-top: 20px;
+        padding: 10px;
+        background-color: #f9f9f9;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        text-align: left;
+        display: none;
+      }
+
+      .loading {
+        font-weight: bold;
+        color: blue;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Upload PDF to Analyze</h1>
+      <form id="pdfUploadForm" method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="file" id="pdfFile" name="file" accept=".pdf" required />
+        <button type="submit">Upload and Analyze</button>
+      </form>
+      <div class="response" id="response"></div>
+    </div>
+
+    <script>
+      document
+        .getElementById("pdfUploadForm")
+        .addEventListener("submit", async function (event) {
+          event.preventDefault();
+
+          const fileInput = document.getElementById("pdfFile");
+          const responseDiv = document.getElementById("response");
+
+          if (!fileInput.files.length) {
+            alert("Please select a PDF file.");
+            return;
+          }
+
+          const formData = new FormData(this);
+          const csrfToken = document.querySelector(
+            "[name=csrfmiddlewaretoken]"
+          ).value; // Get CSRF token
+
+          responseDiv.innerHTML = `<p class="loading">Analyzing PDF... Please wait.</p>`;
+          responseDiv.style.display = "block";
+
+          try {
+            const response = await fetch("{% url 'ai-analysis' %}", {
+              method: "POST",
+              headers: {
+                "X-CSRFToken": csrfToken, // Include CSRF token in headers
+              },
+              body: formData,
+            });
+
+            if (!response.ok) {
+              throw new Error("Failed to upload file. Please try again.");
+            }
+
+            const data = await response.json();
+
+            responseDiv.innerHTML = `<strong>Extracted Data:</strong><br><pre>${JSON.stringify(
+              data.extracted_data,
+              null,
+              2
+            )}</pre>`;
+          } catch (error) {
+            responseDiv.innerHTML = `<p style="color: red;"><strong>Error:</strong> ${error.message}</p>`;
+          }
+        });
+    </script>
+  </body>
+</html>

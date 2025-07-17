@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Customer Data</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        padding: 0;
+        background-color: yellow;
+      }
+      nav {
+        margin-bottom: 20px;
+        padding: 10px;
+        background-color: #f0f0f0;
+        border-radius: 5px;
+        display: flex;
+        justify-content: flex-end;
+        max-width: 800px;
+        margin-left: auto;
+      }
+      nav a {
+        margin-right: 15px;
+        text-decoration: none;
+        color: black;
+        font-weight: bold;
+      }
+      nav a:hover {
+        text-decoration: underline;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        padding: 10px;
+        border: 1px solid #ccc;
+        text-align: left;
+      }
+      th {
+        background-color: #f2f2f2;
+      }
+      /* Add classes for different ratings */
+      .excellent {
+        background-color: green;
+        color: white;
+      }
+      .good {
+        background-color: yellow;
+        color: black;
+      }
+      .moderate {
+        background-color: pink;
+        color: black;
+      }
+      .poor {
+        background-color: red;
+        color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Customer Table</h1>
+    <nav>
+      <a href="{% url 'customer_questions' %}">Customer Questions</a>
+      <a href="{% url 'questions' %}">All Questions</a>
+      <a href="{% url 'category' %}">All Categories</a>
+      <a href="{% url 'customer' %}">Customer Table</a>
+    </nav>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Product</th>
+          <th>Area</th>
+          <th>Country</th>
+          <th>Score</th>
+          <th>Rating</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for customer in customers %}
+        <tr>
+          <td>{{ customer.name }}</td>
+          <td>{{ customer.product }}</td>
+          <td>{{ customer.area }}</td>
+          <td>{{ customer.country }}</td>
+          <td>{{ customer.score }}</td>
+          <td
+            class="{% if customer.ratings == 'Excelent' %}excellent {% elif customer.ratings == 'Good' %}good {% elif customer.ratings == 'Moderate' %}moderate {% else %}poor{% endif %}"
+          >
+            {{ customer.ratings }}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6">No customers found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </body>
+</html>
