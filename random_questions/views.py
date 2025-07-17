@@ -873,7 +873,7 @@ def upload_pdf(request):
 
 def play_with_gemini(request):
     endpoint = "https://api.gemini-flash.com/v1/extract/bank-statement"
-    api_key = "AIzaSyABOaMZVSeK4aDA_-qEBuVUCYPixoviZbQ"
+    api_key =  os.getenv("GEMINI_API_KEY")
     if request.method == 'GET':
         return render(request, 'analysis.html')
 
