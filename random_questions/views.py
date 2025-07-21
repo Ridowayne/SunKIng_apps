@@ -28,6 +28,7 @@ from botocore.exceptions import ClientError
 from pathlib import Path
 import google.generativeai as genai
 
+load_dotenv()
 
 
 # Create your views here.
@@ -462,7 +463,7 @@ def process_pdf_with_claude(pdf_path):
     try:
         # Initialize Claude client
         client = anthropic.Client(
-            api_key=os.getenv("Anthropic_API_KEY")
+            api_key=os.getenv("ANTHROPIC_API_KEY")
         )
         
         # Read and encode PDF file
@@ -975,33 +976,12 @@ def play_with_gemini_using_gemini_client(request):
             'extracted_data': response.text,
         })
 
-# will use this finally remove the processed file from memory
-# finally:
-#             # Cleanup: Remove uploaded file
-#             try:
-#                 os.remove(absolute_file_path)
-#             except Exception as e:
-#                 logger.error(f"Error cleaning up file: {str(e)}")
-
-
 from google import genai
 from google.genai import types
 import pathlib
 import httpx
 
-# client = genai.Client()
-
-# long_context_pdf_path = "https://www.nasa.gov/wp-content/uploads/static/history/alsj/a17/A17_FlightPlan.pdf" # Replace with the actual URL of your large PDF
-
-# # Retrieve the PDF
-# file_path = pathlib.Path('A17.pdf')
-# file_path.write_bytes(httpx.get(long_context_pdf_path).content)
-
-
-
 def play_with_gemini_using_gemini_client_for_large(request):
-    from google import genai
-    from google.genai import types 
     from google.genai.types import HttpOptions
     import pathlib
     import httpx
@@ -1103,7 +1083,6 @@ def transcribe_call_with_gemini(request):
             agent_id = request.POST.get('agent_id')
             agent_name = request.POST.get('agent_name')
             auditor = "Rilwan Hassan"
-            print(disposition, agent_id, agent_name)
             
             # Gemini API key
             # api_key = os.environ.get('GEMINI_API_KEY')
@@ -1430,13 +1409,11 @@ def call_call_overdue_lamp_customers_with_twilio(request):
 
 import openpyxl
 from django.shortcuts import render
-from django.http import JsonResponse
+
 from django.conf import settings
 from twilio.rest import Client
 from twilio.base.exceptions import TwilioException
-import logging
 
-logger = logging.getLogger(__name__)
 
 def call_overdue_lamp_customers(request):
     if request.method == 'GET':
@@ -1577,14 +1554,14 @@ import pandas as pd
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-import logging
+
 
 # Set up logging
 logger = logging.getLogger(__name__)
 
 # Initialize Africa's Talking
 username = "RobocallApP"  
-api_key = "atsk_e7718dbea50a16c32fa006eefd415318140b771d2e98b6d74323c09b35f761f6eaae4527"  
+api_key = os.getenv("AFRICAS_TALKING_API_KEY") 
 africastalking.initialize(username, api_key)
 voice = africastalking.Voice
 
