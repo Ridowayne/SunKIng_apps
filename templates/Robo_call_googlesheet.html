@@ -1,0 +1,196 @@
+<!-- call_customers.html -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Call Customers</title>
+    <style>
+      .progress-bar {
+        width: 100%;
+        background-color: #f0f0f0;
+        border-radius: 4px;
+        margin: 10px 0;
+      }
+      .progress {
+        height: 20px;
+        background-color: #4caf50;
+        border-radius: 4px;
+        text-align: center;
+        line-height: 20px;
+        color: white;
+      }
+      .form-group {
+        margin-bottom: 15px;
+      }
+      label {
+        display: block;
+        margin-bottom: 5px;
+      }
+      #progress-section {
+        display: none;
+        margin-top: 20px;
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Call Overdue Customers</h1>
+
+    <form id="callForm" method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      <div class="form-group">
+        <label>Data Source:</label>
+        <select name="source_type" id="source_type">
+          <option value="file">Upload File</option>
+          <option value="google_sheets">Google Sheets</option>
+        </select>
+      </div>
+
+      <div id="file_section">
+        <div class="form-group">
+          <label>Excel File:</label>
+          <input type="file" name="file" accept=".xlsx,.xls" />
+        </div>
+      </div>
+
+      <div id="google_sheets_section" style="display: none">
+        <div class="form-group">
+          <label>Google Sheet URL:</label>
+          <input
+            type="url"
+            name="sheet_url"
+            placeholder="https://docs.google.com/spreadsheets/..."
+          />
+        </div>
+        <div class="form-group">
+          <label>Worksheet Name (optional):</label>
+          <input type="text" name="worksheet_name" placeholder="Sheet1" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Batch Size:</label>
+        <input type="number" name="batch_size" value="100" min="1" max="1000" />
+        <small>Number of calls to process in each batch</small>
+      </div>
+
+      <div class="form-group">
+        <label>Max Workers (parallel processing):</label>
+        <input type="number" name="max_workers" value="1" min="1" max="5" />
+        <small>Number of parallel processes (use with caution)</small>
+      </div>
+
+      <button type="submit">Start Calling</button>
+    </form>
+
+    <div id="progress-section">
+      <h2>Call Progress</h2>
+      <div class="progress-bar">
+        <div class="progress" id="progress-bar" style="width: 0%">0%</div>
+      </div>
+      <div id="progress-details">
+        <p>
+          Processed: <span id="completed">0</span> / <span id="total">0</span>
+        </p>
+        <p>Successful: <span id="successful">0</span></p>
+        <p>Failed: <span id="failed">0</span></p>
+        <p>Estimated Completion: <span id="eta">-</span></p>
+        <p>
+          Current Batch: <span id="current-batch">0</span> /
+          <span id="total-batches">0</span>
+        </p>
+      </div>
+    </div>
+
+    <script>
+      document
+        .getElementById("source_type")
+        .addEventListener("change", function () {
+          const fileSection = document.getElementById("file_section");
+          const googleSheetsSection = document.getElementById(
+            "google_sheets_section"
+          );
+
+          if (this.value === "google_sheets") {
+            fileSection.style.display = "none";
+            googleSheetsSection.style.display = "block";
+          } else {
+            fileSection.style.display = "block";
+            googleSheetsSection.style.display = "none";
+          }
+        });
+
+      document
+        .getElementById("callForm")
+        .addEventListener("submit", function (e) {
+          e.preventDefault();
+
+          // Show progress section
+          document.getElementById("progress-section").style.display = "block";
+
+          // Submit form via AJAX
+          const formData = new FormData(this);
+
+          fetch("", {
+            method: "POST",
+            body: formData,
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              console.log("Completed:", data);
+              alert(
+                "Calling completed! Successful: " +
+                  data.summary.successful_calls +
+                  ", Failed: " +
+                  data.summary.failed_calls
+              );
+            })
+            .catch((error) => {
+              console.error("Error:", error);
+              alert("An error occurred: " + error.message);
+            });
+
+          // Start polling for progress
+          pollProgress();
+        });
+
+      function pollProgress() {
+        fetch("/get-call-progress/") // Update with your actual URL
+          .then((response) => response.json())
+          .then((data) => {
+            // Update progress bar
+            const progressPercent = data.progress;
+            const progressBar = document.getElementById("progress-bar");
+            progressBar.style.width = progressPercent + "%";
+            progressBar.textContent = progressPercent.toFixed(1) + "%";
+
+            // Update details
+            document.getElementById("completed").textContent =
+              data.details.completed;
+            document.getElementById("total").textContent = data.details.total;
+            document.getElementById("successful").textContent =
+              data.details.successful;
+            document.getElementById("failed").textContent = data.details.failed;
+            document.getElementById("eta").textContent =
+              data.details.estimated_completion || "-";
+            document.getElementById("current-batch").textContent =
+              data.details.current_batch;
+            document.getElementById("total-batches").textContent =
+              data.details.total_batches;
+
+            // Continue polling if not complete
+            if (progressPercent < 100) {
+              setTimeout(pollProgress, 2000);
+            }
+          })
+          .catch((error) => {
+            console.error("Error polling progress:", error);
+            // Continue polling even if there's an error
+            setTimeout(pollProgress, 5000);
+          });
+      }
+    </script>
+  </body>
+</html>
