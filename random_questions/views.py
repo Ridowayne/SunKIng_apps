@@ -1642,9 +1642,355 @@ def ait_voice_response(request):
     return HttpResponse(xml, content_type="application/xml")
 
 
+import africastalking
+import pandas as pd
+import gspread
+from google.oauth2.service_account import Credentials
+from django.shortcuts import render
+from django.http import JsonResponse, HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+import logging
+import os
+from datetime import datetime, timedelta
+import time
+import json
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import threading
 
+# Set up logging
+logger = logging.getLogger(__name__)
 
+# Initialize Africa's Talking
+username = "RobocallApP"  
+api_key = os.getenv("AFRICAS_TALKING_API_KEY") 
+africastalking.initialize(username, api_key)
+voice = africastalking.Voice
 
+# Your registered test or business number
+CALL_FROM_NUMBER = "+2342017001133"
+VOICE_CALLBACK_BASE_URL = "https://b09ff8012dbb.ngrok-free.app/prospects/voice/response/"
+
+# Google Sheets setup
+SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly']
+
+# Rate limiting settings (based on Africa's Talking guidelines)
+MAX_CALLS_PER_MINUTE = 30  # Conservative estimate
+CALL_DURATION_ESTIMATE = 45  # Average call duration in seconds
+
+# Global variables for tracking call progress
+call_progress = {
+    'total': 0,
+    'completed': 0,
+    'successful': 0,
+    'failed': 0,
+    'start_time': None,
+    'estimated_completion': None,
+    'current_batch': 0,
+    'total_batches': 0
+}
+progress_lock = threading.Lock()
+
+def get_google_sheet_data(sheet_url, worksheet_name=None, credentials_path=None):
+    """
+    Fetch data from Google Sheets
+    """
+    try:
+        if credentials_path:
+            creds = Credentials.from_service_account_file(credentials_path, scopes=SCOPES)
+        else:
+            # Use environment variable or default service account
+            creds = Credentials.from_service_account_info(
+                json.loads(os.getenv('GOOGLE_SERVICE_ACCOUNT_JSON')),
+                scopes=SCOPES
+            )
+        
+        client = gspread.authorize(creds)
+        
+        # Open the spreadsheet
+        spreadsheet = client.open_by_url(sheet_url)
+        
+        # Select worksheet
+        if worksheet_name:
+            worksheet = spreadsheet.worksheet(worksheet_name)
+        else:
+            worksheet = spreadsheet.sheet1
+        
+        # Get all data
+        data = worksheet.get_all_records()
+        return pd.DataFrame(data)
+        
+    except Exception as e:
+        logger.error(f"Failed to fetch Google Sheet data: {str(e)}")
+        raise
+
+def validate_phone_number(phone):
+    """
+    Validate and format phone number for Africa's Talking
+    """
+    # Remove any non-digit characters
+    phone = ''.join(filter(str.isdigit, str(phone)))
+    
+    # Handle Nigerian numbers (add country code if missing)
+    if phone.startswith('0') and len(phone) == 11:
+        phone = '+234' + phone[1:]
+    elif not phone.startswith('+') and len(phone) == 10:
+        phone = '+234' + phone
+    
+    return phone
+
+def make_single_call(phone, name, amount_due, retry_count=0):
+    """
+    Make a single call with retry logic
+    """
+    max_retries = 2
+    
+    try:
+        response = voice.call(
+            callTo=[phone],
+            callFrom=CALL_FROM_NUMBER,
+            # url=callback_url  # Uncomment if you want to use callback
+        )
+        
+        return {
+            'name': name, 
+            'phone': phone, 
+            'amount_due': amount_due,
+            'status': 'success', 
+            'response': response,
+            'timestamp': datetime.now().isoformat(),
+            'retries': retry_count
+        }
+        
+    except Exception as e:
+        if retry_count < max_retries:
+            # Wait before retrying
+            time.sleep(2)
+            return make_single_call(phone, name, amount_due, retry_count + 1)
+        else:
+            logger.error(f"Call failed for {phone} after {max_retries} retries: {str(e)}")
+            return {
+                'name': name, 
+                'phone': phone, 
+                'amount_due': amount_due,
+                'status': 'error', 
+                'error': str(e),
+                'timestamp': datetime.now().isoformat(),
+                'retries': retry_count
+            }
+
+def process_batch(batch_df, batch_number, total_batches):
+    """
+    Process a batch of calls with proper rate limiting
+    """
+    batch_results = []
+    
+    with progress_lock:
+        call_progress['current_batch'] = batch_number
+    
+    for index, row in batch_df.iterrows():
+        name = row.get('name', 'Customer')
+        raw_phone = row.get('phone')
+        amount_due = row.get('amount_due', 0)
+        
+        if pd.isna(raw_phone) or not raw_phone:
+            result = {
+                'name': name, 
+                'phone': 'Missing', 
+                'status': 'error', 
+                'error': 'Phone number missing',
+                'timestamp': datetime.now().isoformat()
+            }
+            batch_results.append(result)
+            
+            with progress_lock:
+                call_progress['completed'] += 1
+                call_progress['failed'] += 1
+            continue
+        
+        # Format phone number
+        phone = validate_phone_number(raw_phone)
+        
+        # Make the call
+        result = make_single_call(phone, name, amount_due)
+        batch_results.append(result)
+        
+        # Update progress
+        with progress_lock:
+            call_progress['completed'] += 1
+            if result['status'] == 'success':
+                call_progress['successful'] += 1
+            else:
+                call_progress['failed'] += 1
+            
+            # Update estimated completion time
+            elapsed = (datetime.now() - call_progress['start_time']).total_seconds()
+            calls_per_second = call_progress['completed'] / elapsed if elapsed > 0 else 0
+            if calls_per_second > 0:
+                remaining = call_progress['total'] - call_progress['completed']
+                eta_seconds = remaining / calls_per_second
+                call_progress['estimated_completion'] = (
+                    datetime.now() + timedelta(seconds=eta_seconds)
+                ).isoformat()
+        
+        # Rate limiting - sleep between calls
+        time.sleep(60 / MAX_CALLS_PER_MINUTE)
+    
+    return batch_results
+
+@csrf_exempt
+def call_overdue_customers_with_ait(request):
+    if request.method == 'GET':
+        return render(request, 'call_customers.html')
+
+    elif request.method == 'POST':
+        print("Received POST request to call overdue customers")
+        
+        # Reset progress
+        with progress_lock:
+            call_progress.update({
+                'total': 0,
+                'completed': 0,
+                'successful': 0,
+                'failed': 0,
+                'start_time': datetime.now(),
+                'estimated_completion': None,
+                'current_batch': 0,
+                'total_batches': 0
+            })
+        
+        source_type = request.POST.get('source_type', 'file')
+        batch_size = int(request.POST.get('batch_size', 100))
+        max_workers = int(request.POST.get('max_workers', 1))
+        
+        try:
+            if source_type == 'file':
+                if 'file' not in request.FILES:
+                    return JsonResponse({'error': 'No file uploaded'}, status=400)
+
+                excel_file = request.FILES['file']
+                print("Processing uploaded Excel file")
+                
+                try:
+                    df = pd.read_excel(excel_file)
+                except Exception as e:
+                    logger.error(f"Failed to read Excel file: {str(e)}")
+                    return JsonResponse({'error': f'Invalid Excel file: {str(e)}'}, status=400)
+            
+            elif source_type == 'google_sheets':
+                sheet_url = request.POST.get('sheet_url')
+                worksheet_name = request.POST.get('worksheet_name')
+                
+                if not sheet_url:
+                    return JsonResponse({'error': 'Google Sheet URL is required'}, status=400)
+                
+                print(f"Fetching data from Google Sheet: {sheet_url}")
+                df = get_google_sheet_data(sheet_url, worksheet_name)
+            
+            else:
+                return JsonResponse({'error': 'Invalid source type'}, status=400)
+            
+            print(f"Retrieved {len(df)} records from {source_type}")
+            
+            # Validate required columns
+            required_columns = {"name", "phone", "amount_due"}
+            if not required_columns.issubset(df.columns):
+                missing = required_columns - set(df.columns)
+                return JsonResponse({'error': f'Missing required columns: {missing}'}, status=400)
+            
+            # Update total count
+            with progress_lock:
+                call_progress['total'] = len(df)
+            
+            # Process in batches
+            total_batches = (len(df) + batch_size - 1) // batch_size
+            
+            with progress_lock:
+                call_progress['total_batches'] = total_batches
+            
+            all_results = []
+            
+            # Use ThreadPoolExecutor for parallel processing if allowed
+            if max_workers > 1:
+                with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                    # Split into batches
+                    futures = []
+                    for i in range(total_batches):
+                        start_idx = i * batch_size
+                        end_idx = min((i + 1) * batch_size, len(df))
+                        batch_df = df.iloc[start_idx:end_idx]
+                        
+                        futures.append(
+                            executor.submit(process_batch, batch_df, i+1, total_batches)
+                        )
+                    
+                    for future in as_completed(futures):
+                        batch_results = future.result()
+                        all_results.extend(batch_results)
+            else:
+                # Sequential processing
+                for i in range(total_batches):
+                    start_idx = i * batch_size
+                    end_idx = min((i + 1) * batch_size, len(df))
+                    batch_df = df.iloc[start_idx:end_idx]
+                    
+                    batch_results = process_batch(batch_df, i+1, total_batches)
+                    all_results.extend(batch_results)
+            
+            # Calculate final statistics
+            total_time = (datetime.now() - call_progress['start_time']).total_seconds()
+            calls_per_minute = (call_progress['completed'] / total_time) * 60 if total_time > 0 else 0
+            
+            print(f"Calling completed: {call_progress['successful']} successful, {call_progress['failed']} failed")
+            
+            return JsonResponse({
+                'results': all_results,
+                'summary': {
+                    'total_calls': call_progress['total'],
+                    'successful_calls': call_progress['successful'],
+                    'failed_calls': call_progress['failed'],
+                    'total_time_seconds': total_time,
+                    'calls_per_minute': calls_per_minute,
+                    'completion_time': datetime.now().isoformat()
+                }
+            })
+            
+        except Exception as e:
+            logger.error(f"Unexpected error in call processing: {str(e)}")
+            return JsonResponse({'error': f'Processing failed: {str(e)}'}, status=500)
+
+@csrf_exempt
+def get_call_progress(request):
+    """
+    Endpoint to check progress of ongoing call campaign
+    """
+    with progress_lock:
+        progress_data = call_progress.copy()
+    
+    if progress_data['completed'] > 0 and progress_data['total'] > 0:
+        progress_percent = (progress_data['completed'] / progress_data['total']) * 100
+    else:
+        progress_percent = 0
+        
+    return JsonResponse({
+        'progress': progress_percent,
+        'details': progress_data
+    })
+
+@csrf_exempt
+def ait_voice_response(request):
+    """
+    Voice response handler for Africa's Talking
+    """
+    xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <Response>
+            <Say voice="en-US-Standard-C" playBeep="false">
+                Dear customer, This is a reminder from SunKing Solar. 
+                Your SunKing product is due for payment. 
+                Kindly make your payment today. Thank you.
+            </Say>
+        </Response>
+    """
+    return HttpResponse(xml, content_type="application/xml")
 
 
 
