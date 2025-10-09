@@ -1560,9 +1560,7 @@ from django.views.decorators.csrf import csrf_exempt
 logger = logging.getLogger(__name__)
 
 
-# Your registered test or business number
-CALL_FROM_NUMBER = "+2342017001133"
-VOICE_CALLBACK_BASE_URL = "https://b09ff8012dbb.ngrok-free.app/prospects/voice/response/"  
+ 
 
 @csrf_exempt
 def call_overdue_customers_with_ait(request):
@@ -1571,6 +1569,10 @@ def call_overdue_customers_with_ait(request):
     api_key = os.getenv("AFRICASTALKING_API_KEY") 
     africastalking.initialize(username, api_key)
     voice = africastalking.Voice
+
+    # Your registered test or business number
+    CALL_FROM_NUMBER = "+2342017001133"
+    VOICE_CALLBACK_BASE_URL = "https://b09ff8012dbb.ngrok-free.app/prospects/voice/response/" 
 
     if request.method == 'GET':
         return render(request, 'call_customers.html')
@@ -1661,15 +1663,15 @@ import threading
 # Set up logging
 logger = logging.getLogger(__name__)
 
-# Initialize Africa's Talking
-username = os.getenv("AFRICASTALKING_USERNAME") 
-api_key = os.getenv("AFRICASTALKING_API_KEY") 
-africastalking.initialize(username, api_key)
-voice = africastalking.Voice
+# # Initialize Africa's Talking
+# username = os.getenv("AFRICASTALKING_USERNAME") 
+# api_key = os.getenv("AFRICASTALKING_API_KEY") 
+# africastalking.initialize(username, api_key)
+# voice = africastalking.Voice
 
-# Your registered test or business number
-CALL_FROM_NUMBER = "+2342017001133"
-VOICE_CALLBACK_BASE_URL = "https://b09ff8012dbb.ngrok-free.app/prospects/voice/response/"
+# # Your registered test or business number
+# CALL_FROM_NUMBER = "+2342017001133"
+# VOICE_CALLBACK_BASE_URL = "https://b09ff8012dbb.ngrok-free.app/prospects/voice/response/"
 
 # Google Sheets setup
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly']
@@ -1744,6 +1746,15 @@ def make_single_call(phone, name, amount_due, retry_count=0):
     Make a single call with retry logic
     """
     max_retries = 2
+
+    username = os.getenv("AFRICASTALKING_USERNAME") 
+    api_key = os.getenv("AFRICASTALKING_API_KEY") 
+    africastalking.initialize(username, api_key)
+    voice = africastalking.Voice
+
+    # Your registered test or business number
+    CALL_FROM_NUMBER = "+2342017001133"
+    VOICE_CALLBACK_BASE_URL = "https://b09ff8012dbb.ngrok-free.app/prospects/voice/response/"
     
     try:
         response = voice.call(
