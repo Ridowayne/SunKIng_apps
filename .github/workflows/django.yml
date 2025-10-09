@@ -10,10 +10,6 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        python-version: [3.8, 3.9, 3.10]
-
     services:
       postgres:
         image: postgres:14
@@ -30,7 +26,7 @@ jobs:
           --health-retries 5
 
     env:
-      DJANGO_SETTINGS_MODULE: your_project.settings
+      DJANGO_SETTINGS_MODULE: your_project.settings  # change this to your actual settings module
       DEBUG: 0
       SECRET_KEY: test_secret_key
       ALLOWED_HOSTS: localhost,127.0.0.1
@@ -40,10 +36,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v3
+      - name: Set up Python 3.x
+        uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.x"
 
       - name: Cache pip
         uses: actions/cache@v3
@@ -72,5 +68,5 @@ jobs:
       - name: Run Django system checks
         run: python manage.py check
 
-      - name: Run Tests (Django will auto-create a test DB)
+      - name: Run Tests (Django auto-creates test DB)
         run: python manage.py test --noinput --verbosity=2
