@@ -1568,7 +1568,7 @@ VOICE_CALLBACK_BASE_URL = "https://b09ff8012dbb.ngrok-free.app/prospects/voice/r
 def call_overdue_customers_with_ait(request):
     # Initialize Africa's Talking
     username = os.getenv("AFRICASTALKING_USERNAME")  
-    api_key = os.getenv("AFRICAS_TALKING_API_KEY") 
+    api_key = os.getenv("AFRICASTALKING_API_KEY") 
     africastalking.initialize(username, api_key)
     voice = africastalking.Voice
 
@@ -1662,8 +1662,8 @@ import threading
 logger = logging.getLogger(__name__)
 
 # Initialize Africa's Talking
-username = os.getenv("AFRICASTALKING_USERNAME"  "RobocallApP") 
-api_key = os.getenv("AFRICAS_TALKING_API_KEY") 
+username = os.getenv("AFRICASTALKING_USERNAME") 
+api_key = os.getenv("AFRICASTALKING_API_KEY") 
 africastalking.initialize(username, api_key)
 voice = africastalking.Voice
 
