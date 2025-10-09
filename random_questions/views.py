@@ -1661,7 +1661,7 @@ import threading
 logger = logging.getLogger(__name__)
 
 # Initialize Africa's Talking
-username = "RobocallApP"  
+username = os.getenv("AFRICASTALKING_USERNAME"  "RobocallApP") 
 api_key = os.getenv("AFRICAS_TALKING_API_KEY") 
 africastalking.initialize(username, api_key)
 voice = africastalking.Voice
